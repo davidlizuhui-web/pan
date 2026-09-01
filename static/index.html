@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <title>交互式弹簧振子</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">RK4 · MASS–SPRING LAB</p>
+        <h1>交互式弹簧振子</h1>
+      </div>
+      <p class="hero-copy">给定初始位移与速度，观察理想弹簧系统如何随时间演化。</p>
+    </header>
+
+    <section class="workspace">
+      <aside class="control-panel" aria-label="模拟参数">
+        <div class="panel-heading">
+          <span class="section-number">01</span>
+          <div>
+            <p class="kicker">INITIAL STATE</p>
+            <h2>设置初始状态</h2>
+          </div>
+        </div>
+
+        <form id="parameter-form">
+          <label for="x0-input">
+            <span>初始位移 <i>x₀</i></span>
+            <span class="input-wrap">
+              <input id="x0-input" type="number" min="-2" max="2" step="0.001" value="-0.502" required>
+              <small>m</small>
+            </span>
+          </label>
+          <label for="v0-input">
+            <span>初始速度 <i>v₀</i></span>
+            <span class="input-wrap">
+              <input id="v0-input" type="number" min="-1" max="1" step="0.001" value="0.939" required>
+              <small>m/s</small>
+            </span>
+          </label>
+          <label for="duration-input">
+            <span>模拟时长 <i>t</i></span>
+            <span class="input-wrap">
+              <input id="duration-input" type="number" min="0.1" max="60" step="0.1" value="10" required>
+              <small>s</small>
+            </span>
+          </label>
+          <button id="calculate-button" class="primary-button" type="submit">
+            <span>计算轨迹</span><span aria-hidden="true">→</span>
+          </button>
+        </form>
+
+        <div id="error-message" role="alert" aria-live="polite"></div>
+
+        <div class="model-card">
+          <p class="kicker">MODEL</p>
+          <div class="formula">mẍ + kx = 0</div>
+          <dl>
+            <div><dt>质量 m</dt><dd>1.000 kg</dd></div>
+            <div><dt>刚度 k</dt><dd>π² N/m</dd></div>
+            <div><dt>周期 T</dt><dd>2.000 s</dd></div>
+          </dl>
+        </div>
+
+        <div class="transport" aria-label="播放控制">
+          <div class="button-row">
+            <button id="play-button" class="icon-button" type="button" aria-label="播放">▶ <span>播放</span></button>
+            <button id="pause-button" class="icon-button" type="button" aria-label="暂停">Ⅱ <span>暂停</span></button>
+            <button id="reset-button" class="icon-button" type="button" aria-label="重新开始">↺ <span>重置</span></button>
+          </div>
+          <label class="speed-control" for="speed-select">
+            <span>播放速度</span>
+            <select id="speed-select">
+              <option value="0.5">0.5×</option>
+              <option value="1" selected>1×</option>
+              <option value="2">2×</option>
+            </select>
+          </label>
+        </div>
+      </aside>
+
+      <div class="visual-panel">
+        <div class="visual-heading">
+          <div>
+            <p class="kicker">LIVE SIMULATION</p>
+            <h2>运动状态</h2>
+          </div>
+          <span class="status-pill"><i></i> RK4 SOLVER</span>
+        </div>
+
+        <div class="readouts" aria-label="当前状态">
+          <output><span>时间 t</span><strong id="time-value">0.000</strong><small>s</small></output>
+          <output><span>位置 x</span><strong id="position-value">—</strong><small>m</small></output>
+          <output><span>速度 v</span><strong id="velocity-value">—</strong><small>m/s</small></output>
+        </div>
+
+        <section class="scene-card" aria-labelledby="scene-title">
+          <div class="card-title-row">
+            <h3 id="scene-title">弹簧—质量系统</h3>
+            <span>平衡位置 <i class="legend-equilibrium"></i></span>
+          </div>
+          <svg id="simulation-svg" viewBox="0 0 900 320" role="img" aria-label="弹簧与物体运动示意图">
+            <defs>
+              <linearGradient id="mass-gradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#ffd47e"></stop>
+                <stop offset="1" stop-color="#f39a32"></stop>
+              </linearGradient>
+            </defs>
+            <line class="track" x1="78" y1="230" x2="850" y2="230"></line>
+            <line class="equilibrium" x1="540" y1="54" x2="540" y2="258"></line>
+            <path class="wall" d="M80 55V270 M56 72L80 55 M56 102L80 85 M56 132L80 115 M56 162L80 145 M56 192L80 175 M56 222L80 205 M56 252L80 235"></path>
+            <path id="spring-path" class="spring"></path>
+            <rect id="mass-block" class="mass" width="112" height="96" rx="16"></rect>
+            <text id="mass-label" class="mass-label" text-anchor="middle">m</text>
+            <text class="wall-label" x="64" y="294">固定端</text>
+            <text class="equilibrium-label" x="540" y="286" text-anchor="middle">x = 0</text>
+          </svg>
+        </section>
+
+        <label class="timeline" for="time-slider">
+          <span>时间位置</span>
+          <input id="time-slider" type="range" min="0" max="10" step="0.001" value="0">
+          <span class="timeline-scale"><i>0 s</i><i id="timeline-end">10.0 s</i></span>
+        </label>
+
+        <section class="plot-card" aria-labelledby="plot-title">
+          <div class="card-title-row">
+            <h3 id="plot-title">位移—时间轨迹</h3>
+            <span><i class="legend-trajectory"></i> x(t)</span>
+          </div>
+          <svg id="plot-svg" viewBox="0 0 900 300" role="img" aria-label="位移时间曲线">
+            <line class="plot-axis" x1="70" y1="145" x2="870" y2="145"></line>
+            <line class="plot-axis" x1="70" y1="32" x2="70" y2="258"></line>
+            <text class="plot-label" x="875" y="166">t</text>
+            <text class="plot-label" x="50" y="30">x</text>
+            <path id="trajectory-path" class="trajectory"></path>
+            <line id="time-guide" class="time-guide" x1="70" y1="32" x2="70" y2="258"></line>
+            <circle id="current-point" class="current-point" cx="70" cy="145" r="7"></circle>
+          </svg>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

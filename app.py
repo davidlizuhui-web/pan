@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
 from spring_model import MASS, OMEGA, PERIOD, SPRING_CONSTANT, solve_trajectory
@@ -30,6 +34,13 @@ class TrajectoryResponse(BaseModel):
 
 
 app = FastAPI(title="Interactive Mass-Spring Simulator")
+STATIC_DIR = Path(__file__).resolve().with_name("static")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.get("/", response_class=FileResponse)
+def index() -> FileResponse:
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/health")
