@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 # =========================
 # 1. 基本参数
 # =========================
+#高斯噪声 拟合 观测噪声
+noise_std = 0.005
 
 m = 1.0
 k = np.pi**2
@@ -14,13 +16,14 @@ num_trajectories = 50
 
 t_start = 0.0
 t_end = 10.0
-num_time_steps = 1001
+num_time_steps = 1000
 
 # 时间点
 t = np.linspace(t_start, t_end, num_time_steps)
 
 # 固定随机种子，保证每次运行结果一致
 np.random.seed(42)
+
 
 
 # =========================
@@ -41,15 +44,18 @@ v0_list = np.random.uniform(low=-1.0, high=1.0, size=num_trajectories)
 trajectories = []
 
 for i in range(num_trajectories):
+    # 高斯噪声
+    x_noise = np.random.normal(0.0, noise_std, size=t.shape)
+    v_noise = np.random.normal(0.0, noise_std, size=t.shape)
 
     x0 = x0_list[i]
     v0 = v0_list[i]
 
     # 解析解：位置
-    x = x0 * np.cos(omega * t) + (v0 / omega) * np.sin(omega * t)
+    x = x0 * np.cos(omega * t) + (v0 / omega) * np.sin(omega * t) +x_noise
 
     # 解析解：速度
-    v = -omega * x0 * np.sin(omega * t) + v0 * np.cos(omega * t)
+    v = -omega * x0 * np.sin(omega * t) + v0 * np.cos(omega * t) +v_noise
 
     trajectory = {
         "trajectory_id": i,
